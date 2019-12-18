@@ -67,6 +67,34 @@ func (sm *StateMachine) Event(name string) *Event {
 	return event
 }
 
+// Check if an event is valid for Stater in current state
+func (sm *StateMachine) CanTrigger(name string, value Stater) bool {
+	var stateWas = value.GetState()
+	if stateWas == "" {
+		stateWas = sm.initialState
+	}
+
+	if event := sm.events[name]; event != nil {
+		var matchedTransitions []*EventTransition
+		for _, transition := range event.transitions {
+			var validFrom= len(transition.froms) == 0
+			if len(transition.froms) > 0 {
+				for _, from := range transition.froms {
+					if from == stateWas {
+						validFrom = true
+					}
+				}
+			}
+
+			if validFrom {
+				matchedTransitions = append(matchedTransitions, transition)
+			}
+		}
+		return len(matchedTransitions) == 1
+	}
+	return false
+}
+
 // Trigger trigger an event
 func (sm *StateMachine) Trigger(name string, value Stater, tx *gorm.DB, notes ...string) error {
 	var (
